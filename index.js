@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2/promise"); // Use promise-based mysql2
+const mysql = require("mysql2/promise");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -22,32 +22,36 @@ const pool = mysql.createPool({
   try {
     const connection = await pool.getConnection();
     console.log('Connected to the MySQL database.');
-    connection.release(); // Release the connection back to the pool
+    connection.release(); 
   } catch (err) {
     console.error('Error connecting to the database:', err);
   }
 })();
 
-// Handle form submission
-app.post('/api/refer_info', async (req, res) => {
-    const { Name, Email, refereeName, refereeEmail } = req.body;
+// post refer info to database
+app.post("/refer_info", async (req, res) => {
     console.log(req.body);
+    const { name, email, refereeName, refereeEmail } = req.body;
   
     try {
-      const [rows] = await pool.query('INSERT INTO refer_info (Name, Email, refereeName, refereeEmail) VALUES (?, ?, ?, ?)', [Name, Email, refereeName, refereeEmail]);
-      res.status(201).send({ message: 'Referral submitted successfully!' });
+      const [result] = await pool.query(
+        "INSERT INTO refer_info (Name, Email, refereeName, refereeEmail) VALUES (?, ?, ?, ?)",
+        [name, email, refereeName, refereeEmail]
+      );
+  
+      res.status(201).json({ message: "Data inserted successfully", id: result.insertId });
     } catch (err) {
-      console.error(err);
-      res.status(500).send({ error: 'An error occurred while submitting the referral' });
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Database query failed' });
     }
   });
 
 
 
-// Example endpoint to query the database
-app.get("/api/data", async (req, res) => {
+// query the database from refer_info table
+app.get("/refer-info", async (req, res) => {
   try {
-    const [rows, fields] = await pool.query('SELECT * FROM your_table_name'); // Adjust the query as needed
+    const [rows, fields] = await pool.query('SELECT * FROM refer_info');
     res.json(rows);
   } catch (err) {
     console.error('Error executing query:', err);
